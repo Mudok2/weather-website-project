@@ -1,9 +1,5 @@
 // api/weather.js (서버리스 함수)
 
-// Vercel 환경 변수에서 키를 안전하게 불러옵니다.
-const API_KEY = process.env.WEATHER_API_KEY; 
-const API_BASE_URL = 'https://api.openweathermap.org';
-
 // 이 함수가 클라이언트의 요청을 처리합니다.
 export default async function (req, res) {
   // 요청에서 필요한 정보 (예: 도시 이름)를 가져올 수 있지만, 
@@ -370,4 +366,5 @@ function showError(message) {
         container.insertBefore(errorDiv, container.firstChild);
     }
 }
+
 
