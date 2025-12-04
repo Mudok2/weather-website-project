@@ -1,35 +1,5 @@
-// api/weather.js (서버리스 함수)
-
-// 이 함수가 클라이언트의 요청을 처리합니다.
-export default async function (req, res) {
-  // 요청에서 필요한 정보 (예: 도시 이름)를 가져올 수 있지만, 
-  // 여기서는 간단하게 'Seoul'을 예로 듭니다.
-  const city = 'Seoul'; 
-  
-  if (!API_KEY) {
-    // 키가 설정되지 않았을 경우 오류를 반환합니다.
-    return res.status(500).json({ error: 'API Key not configured' });
-  }
-
-  try {
-    // 1. 서버에서 외부 OpenWeatherMap API를 호출합니다.
-    const apiUrl = `${API_BASE_URL}/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`;
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-        throw new Error(`External API failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // 2. 서버가 받은 데이터를 클라이언트(브라우저)에게 전달합니다.
-    // (API 키는 전달되지 않습니다.)
-    res.status(200).json(data);
-  } catch (error) {
-    console.error('Error in API route:', error);
-    res.status(500).json({ error: 'Failed to fetch weather data' });
-  }
-}
+// script.js (클라이언트 측 코드)
+// 중요: API 키가 노출되지 않도록, 모든 외부 API 호출은 서버리스 함수 (/api/...)를 통해 이루어집니다.
 
 // State
 let currentLocation = { lat: 40.4168, lon: -3.7038 }; // Default: Madrid
@@ -43,7 +13,7 @@ const searchResults = document.getElementById('search-results');
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
-    loadWeather();
+    loadWeather(); // 초기 로드 시 loadWeather() 호출
 });
 
 // Event Listeners
@@ -57,40 +27,91 @@ function setupEventListeners() {
     });
 }
 
-// Weather API Functions
+// ----------------------------------------------------------------------------------
+// ✅ Weather API Functions (서버리스 함수 호출로 수정됨)
+// ----------------------------------------------------------------------------------
 async function loadWeather() {
     try {
+        // 서버리스 함수 호출: 현재 위치의 날씨 및 예보를 서버에 요청합니다.
+        // 서버리스 함수는 lat/lon을 받아 OpenWeatherMap의 weather와 forecast를 모두 가져와야 합니다.
+        
         const response = await fetch(
-            `${API_BASE_URL}/data/2.5/weather?lat=${currentLocation.lat}&lon=${currentLocation.lon}&appid=${API_KEY}&units=metric`
+            `/api/weather?lat=${currentLocation.lat}&lon=${currentLocation.lon}`
         );
         
         if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
+            // 서버리스 함수에서 반환된 에러 메시지를 처리합니다.
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
 
-        const current = await response.json();
+        const data = await response.json();
 
-        // Get forecast
-        const forecastResponse = await fetch(
-            `${API_BASE_URL}/data/2.5/forecast?lat=${currentLocation.lat}&lon=${currentLocation.lon}&appid=${API_KEY}&units=metric`
-        );
+        // 서버리스 함수가 { current, forecast: list } 형태의 객체를 반환한다고 가정합니다.
+        weatherData = data; // data 자체가 { current, forecast: forecast.list } 형태라고 가정
         
-        const forecast = await forecastResponse.json();
-
-        weatherData = {
-            current,
-            forecast: forecast.list
-        };
-
         updateWeatherDisplay();
     } catch (error) {
         console.error('Error loading weather:', error);
-        showError('Failed to load weather data. Please check your API key.');
+        showError(`Failed to load weather data: ${error.message}. Check Vercel Environment Variables.`);
     }
 }
 
+// ----------------------------------------------------------------------------------
+// ✅ Search Functions (Geo API 호출도 서버리스 함수로 수정)
+// ----------------------------------------------------------------------------------
+async function handleSearch(e) {
+    const query = e.target.value.trim();
+    if (!query) {
+        searchResults.classList.add('hidden');
+        return;
+    }
+
+    try {
+        // 서버리스 함수를 호출하여 Geo API 요청을 서버에서 처리하도록 합니다.
+        // (참고: 새로운 api/search.js 파일이 필요하며, api/weather.js에 통합할 수도 있습니다.)
+        const response = await fetch(
+            `/api/search?q=${encodeURIComponent(query)}`
+        );
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Search API Error: ${response.status}`);
+        }
+        
+        const cities = await response.json();
+
+        searchResults.innerHTML = '';
+        cities.forEach(city => {
+            const item = document.createElement('div');
+            item.className = 'search-result-item';
+            item.innerHTML = `
+                <div class="search-result-name">${city.name}</div>
+                <div class="search-result-country">${city.state ? city.state + ', ' : ''}${city.country}</div>
+            `;
+            item.addEventListener('click', () => {
+                currentLocation = { lat: city.lat, lon: city.lon };
+                searchInput.value = '';
+                searchResults.classList.add('hidden');
+                loadWeather(); // 새로운 위치로 날씨 로드
+            });
+            searchResults.appendChild(item);
+        });
+
+        searchResults.classList.remove('hidden');
+    } catch (error) {
+        console.error('Search error:', error);
+        showError(`Failed to load search results: ${error.message}.`);
+    }
+}
+
+
+// ----------------------------------------------------------------------------------
+// 📊 UI/Utility Functions (변경 없음)
+// ----------------------------------------------------------------------------------
+
 function updateWeatherDisplay() {
-    if (!weatherData) return;
+    if (!weatherData || !weatherData.current) return;
 
     const current = weatherData.current;
 
@@ -99,7 +120,7 @@ function updateWeatherDisplay() {
     document.getElementById('current-temp').textContent = `${Math.round(current.main.temp)}°`;
     document.getElementById('feels-like').textContent = `${Math.round(current.main.feels_like)}°`;
     document.getElementById('wind-speed').textContent = `${current.wind.speed.toFixed(1)} km/h`;
-    document.getElementById('humidity').textContent = `${current.clouds.all}%`;
+    document.getElementById('humidity').textContent = `${current.main.humidity}%`;
     document.getElementById('rain-chance').textContent = `Chance of rain: ${current.clouds.all}%`;
     document.getElementById('uv-index').textContent = '3'; // Not available in free tier
 
@@ -279,7 +300,7 @@ function updateDailyForecast() {
             <div class="daily-day">${dayName}</div>
             <div class="daily-icon">${getWeatherIconSmall(day.weather.id)}</div>
             <div class="daily-description">${day.description}</div>
-            <div class="daily-temps">${maxTemp}/${minTemp}</div>
+            <div class="daily-temps">${maxTemp}°/${minTemp}°</div>
         `;
         dailyContainer.appendChild(dailyItem);
     });
@@ -301,43 +322,6 @@ function getWeatherIconSmall(weatherId) {
     }
 }
 
-// Search Functions
-async function handleSearch(e) {
-    const query = e.target.value.trim();
-    if (!query) {
-        searchResults.classList.add('hidden');
-        return;
-    }
-
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}/geo/1.0/direct?q=${encodeURIComponent(query)}&limit=5&appid=${API_KEY}`
-        );
-        const cities = await response.json();
-
-        searchResults.innerHTML = '';
-        cities.forEach(city => {
-            const item = document.createElement('div');
-            item.className = 'search-result-item';
-            item.innerHTML = `
-                <div class="search-result-name">${city.name}</div>
-                <div class="search-result-country">${city.state ? city.state + ', ' : ''}${city.country}</div>
-            `;
-            item.addEventListener('click', () => {
-                currentLocation = { lat: city.lat, lon: city.lon };
-                searchInput.value = '';
-                searchResults.classList.add('hidden');
-                loadWeather();
-            });
-            searchResults.appendChild(item);
-        });
-
-        searchResults.classList.remove('hidden');
-    } catch (error) {
-        console.error('Search error:', error);
-    }
-}
-
 // Utility Functions
 function debounce(func, wait) {
     let timeout;
@@ -353,18 +337,24 @@ function debounce(func, wait) {
 
 function showError(message) {
     const container = document.querySelector('.page-container');
+    const existingError = document.querySelector('.error-message-box');
+    
+    if (existingError) {
+        existingError.remove();
+    }
+    
     if (container) {
         const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message-box';
         errorDiv.style.cssText = `
             background-color: #fee2e2;
             color: #991b1b;
             padding: 16px;
             border-radius: 8px;
             margin-bottom: 16px;
+            font-weight: bold;
         `;
         errorDiv.textContent = message;
         container.insertBefore(errorDiv, container.firstChild);
     }
 }
-
-
