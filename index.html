@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Weather Page -->
+            <div id="weather-page" class="page active">
+                <div class="page-container">
+                    <!-- Search Bar -->
+                    <div class="search-container">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="search-input" class="search-input" placeholder="Search for cities">
+                        <div id="search-results" class="search-results hidden"></div>
+                    </div>
+
+                    <div class="weather-grid">
+                        <!-- Main Weather Display -->
+                        <div class="main-weather-section">
+                            <!-- Current Weather Card -->
+                            <div class="weather-card current-weather">
+                                <div class="weather-header">
+                                    <div>
+                                        <h1 id="city-name" class="city-name">Madrid</h1>
+                                        <p id="rain-chance" class="rain-chance">Chance of rain: 0%</p>
+                                    </div>
+                                </div>
+
+                                <div class="weather-display">
+                                    <div class="temp-display">
+                                        <span id="current-temp" class="current-temp">31°</span>
+                                    </div>
+                                    <div id="weather-icon" class="weather-icon-large">
+                                        <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="50" cy="35" r="20" fill="#FCD34D" stroke="none"></circle>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Today's Forecast -->
+                            <div class="weather-card">
+                                <h2 class="card-title">TODAY'S FORECAST</h2>
+                                <div id="hourly-forecast" class="hourly-forecast">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+
+                            <!-- Air Conditions -->
+                            <div class="weather-card">
+                                <h2 class="card-title">AIR CONDITIONS</h2>
+                                <div class="air-conditions-grid">
+                                    <div class="condition-item">
+                                        <div class="condition-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2v20"></path>
+                                                <path d="M2 12h20"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="condition-label">Real Feel</p>
+                                            <p id="feels-like" class="condition-value">30°</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="condition-item">
+                                        <div class="condition-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M9.59 0.885L9.7 0.56A8 8 0 1 1 8 23.9A8 8 0 0 1 9.59 0.885Z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="condition-label">Wind</p>
+                                            <p id="wind-speed" class="condition-value">0.2 km/h</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="condition-item">
+                                        <div class="condition-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="condition-label">Chance of rain</p>
+                                            <p id="humidity" class="condition-value">0%</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="condition-item">
+                                        <div class="condition-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="condition-label">UV Index</p>
+                                            <p id="uv-index" class="condition-value">3</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 7-Day Forecast -->
+                        <aside class="forecast-sidebar">
+                            <div class="weather-card">
+                                <h2 class="card-title">7-DAY FORECAST</h2>
+                                <div id="daily-forecast" class="daily-forecast">
+                                    <!-- Populated by JavaScript -->
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
