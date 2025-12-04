@@ -1,5 +1,5 @@
 // script.js (클라이언트 측 코드)
-// 중요: API 키가 노출되지 않도록, 모든 외부 API 호출은 서버리스 함수 (/api/...)를 통해 이루어집니다.
+// 중요: API 키가 노출되지 않도록, 모든 외부 API 호출은 서버리스 함수 (/api/weather?...)를 통해 이루어집니다.
 
 // State
 let currentLocation = { lat: 40.4168, lon: -3.7038 }; // Default: Madrid
@@ -28,37 +28,35 @@ function setupEventListeners() {
 }
 
 // ----------------------------------------------------------------------------------
-// ✅ Weather API Functions (서버리스 함수 호출로 수정됨)
+// ✅ Weather API Functions (서버리스 함수 호출)
 // ----------------------------------------------------------------------------------
 async function loadWeather() {
     try {
-        // 서버리스 함수 호출: 현재 위치의 날씨 및 예보를 서버에 요청합니다.
-        // 서버리스 함수는 lat/lon을 받아 OpenWeatherMap의 weather와 forecast를 모두 가져와야 합니다.
-        
+        // 서버리스 함수를 호출: lat/lon을 쿼리 파라미터로 전달
         const response = await fetch(
+            // /api/weather?lat=...&lon=... 호출
             `/api/weather?lat=${currentLocation.lat}&lon=${currentLocation.lon}`
         );
         
         if (!response.ok) {
-            // 서버리스 함수에서 반환된 에러 메시지를 처리합니다.
             const errorData = await response.json();
             throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
 
-        // 서버리스 함수가 { current, forecast: list } 형태의 객체를 반환한다고 가정합니다.
-        weatherData = data; // data 자체가 { current, forecast: forecast.list } 형태라고 가정
+        // 서버리스 함수가 { current, forecast: list } 형태의 객체를 반환한다고 가정
+        weatherData = data; 
         
         updateWeatherDisplay();
     } catch (error) {
         console.error('Error loading weather:', error);
-        showError(`Failed to load weather data: ${error.message}. Check Vercel Environment Variables.`);
+        showError(`Failed to load weather data: ${error.message}`);
     }
 }
 
 // ----------------------------------------------------------------------------------
-// ✅ Search Functions (Geo API 호출도 서버리스 함수로 수정)
+// ✅ Search Functions (서버리스 함수 호출)
 // ----------------------------------------------------------------------------------
 async function handleSearch(e) {
     const query = e.target.value.trim();
@@ -68,10 +66,10 @@ async function handleSearch(e) {
     }
 
     try {
-        // 서버리스 함수를 호출하여 Geo API 요청을 서버에서 처리하도록 합니다.
-        // (참고: 새로운 api/search.js 파일이 필요하며, api/weather.js에 통합할 수도 있습니다.)
+        // 서버리스 함수를 호출: q(검색어)를 쿼리 파라미터로 전달
         const response = await fetch(
-            `/api/search?q=${encodeURIComponent(query)}`
+            // /api/weather?q=검색어 호출 (서버가 Geo API 처리)
+            `/api/weather?q=${encodeURIComponent(query)}`
         );
         
         if (!response.ok) {
@@ -79,7 +77,7 @@ async function handleSearch(e) {
             throw new Error(errorData.error || `Search API Error: ${response.status}`);
         }
         
-        const cities = await response.json();
+        const cities = await response.json(); // cities 배열을 받음
 
         searchResults.innerHTML = '';
         cities.forEach(city => {
